@@ -1,0 +1,151 @@
+Approximation User Guide
+by Rick Page
+
+0. Important Note
+
+The publicly available GitHub repository does not contain implementations of the algorithms for solving the transport equation (see papers in section 6). See section 4 for running with your own solver (you may also wish to edit the accompanying makefile). If you wish to use this software with the original solvers, please contact rickpagersc@gmail.com. 
+
+1. Overview
+Approximation is a module that assists modelers who wish to solve the one dimensional transport equation with transient storage regions. The partial differential equation takes the form:
+
+dC   U dC   D d^2 C
+-- + ---- - -------- - k1 (S - C) = 0 
+dt    dx      dx^2  
+
+More information about the derivation and application of the model can be found in (Manson, et al, 2011) or (Runkel, 1998). The module is a wrapper to programs that calculate an approximation to the downstream concentrations at M points in time in equal intervals of dt. The initial conditions in space are always 0, and the downstream boundary is always zero diffusive flux. The upstream boundary is defined at each time interval and is provided by the modeler as either a file or an array of values. The approximation is computed using one of two external (non-python) executables that integrate the model. These models are referred to by the module as Otis and Discus, but have different executable names. Section 2 explains more about the external solvers, as well as how to compile them from source.
+
+In general, one uses the module by first creating an instance, defining model and discretization parameters for that instance, and loading in upstream concentrations. Then the solver is run, which generates an approximation to downstream concentrations. The module can also be used to compare an approximation to observed downstream measurements, such as those resulting from tracer experiments. If this is the case, observed concentrations must be loaded before the module can compute absolute and relative error norms. Note that because the solvers assume an initial solute concentration of 0 for main channel and transoient storage regions, the baseline reading must be subtracted from the data set where applicable. 
+
+2. Compilation and Setup
+
+The solvers must be compiled from source. The tar file the module is packed in has the following directory structure which will prove convenient for using Approximation:
+
+approx/
+	../bin
+	../src
+	../py
+	../lib
+	../example
+
+Other directory structures are fine, with some caveats: First, inside the src directory is a makefile that expects the directory structure above. Second, when using the module, the two programs in the bin directory must be accessible to the module. The setBinDir and setBinPath routines are useful for this. Finally, the files model.py and approximation.py should be in your python path (either using the sys module or an environment variable).
+
+Running the makefile will create two object files and move them to lib, and create the two executables CN and DISCUS. After successful compilation, one can begin using the module. If, for some reason, compilation does not succeed, the interested user can still evaluate the module. Four files are included in the archive justInCase.tar, which contains shell scripts and example results. Copy these four files to the bin directory in order to  complete the example in section 5.
+
+3. Module information
+
+Every approximation has an instance of the class Model, which stores the discretization and model parameters as well as upstream concentrations. The Approximation class is the base class of Otis and Discus classes, responsible for running the solvers and managing the input/output. Specific usage information is available using the tool pydoc (i.e. pydoc approximate.py) The typical workflow consists of the tasks below; a specific example is provided at the end of this document. 
+
+The solvers work by reading from a file called lb.dat and writing to a file called rb.dat. These are space delimited files with concentration values for upstream and downstream locations at each time. Please do not name important local files lb.dat or rb.dat: they will be overwritten with proper use of this module! This is one motivation for running the module in it's designated subdirectory (see README for the suggested directory structure).
+
+The basic work-flow is usually as follows: First load the approximation of your choice, Otis or Discus, by making an instance of the corresponding class. The domain M,N,dt, and dx must be set as well as the parameters U,D,k1,k2. The final step is to load the upstream conditions and, optionally, the known tracer data. You have many choices on how to accomplish this task (only one is covered in the example):
+
+A. With a list/np.array: Declare an array, and pass it to the upstream routine
+x = np.ones(solver.stream.M)
+solver.upstream(x)
+
+B. With a space delimited file: river.dat contains (without quotes): "0 0 1 3.2 5.4 3 2 1 1 0"
+solver.upstream("flying-circus.dat")
+
+C. With a two-column file: twocolum.dat contains two equal length columns of data
+, left hand side is upstream and right hand side is downstream
+solver.loadTwoColumnFile("two-column.dat")
+
+D. With a special file format defined for the approx module (see example in section 5):
+solver.loadFile("spam.dat")
+
+All of these methods write the file lb.dat in the present working directory. Methods C and D also set the observed concentration values. The function observed 
+
+4. Advanced Usage:
+If you have your own solver, you may wish to extend or modify the base class Approximation. You do not need a subclass if your solver uses the same inputs, including lb.dat, in the same order (see documentation for the Approximate.run() routine) and also outputs the downstream concentration as rb.dat, the file that the run() method expects to contain approximated solute concentrations. All you need to do is call Approximate.setBinDir() and Approximate.setBinName() appropriately - there is then no real need to define a subclass except for clarity (that said, the subclasses Discus and Otis are actually provided as a convenience). 
+
+4.1 Change the default bin directory so the solver can be found by the module
+Approximate needs to know where the external solver is. It is, by default, assumed to be '../bin' relative to the present working directory. An absolute path may be desireable:
+
+>	solver.setBinDir('/my/abolsute/path/to/bin')
+
+You could also define a subclass and create the __init__ method to set the binary path and name (this is the way the provided subclasses, Otis and Discus, are created) If your solver behaves differently, you could derive your own subclass and redefine __init__, run() or other routines.
+ 
+
+5. Example:
+The present working directory is assumed to be the py directory (see section 2), so that the solvers are in the default /bin directory. Use of an interactive shell is assumed, but these commands will work equally well in a script file (see example.py in /py). The example uses a data set from a study done in Scotland, named scotland.dat. It is a file of the module-specific format:
+M
+N
+dt
+dx
+upstream1	downstream1
+...		...
+upstreamM	downstreamM
+
+This means you do not need to enter domain information, as it will be read from the file. You do need to enter parameter values given in step 5.2 - feel free to try other values to see the result.
+
+5.1 First, define an instance of Discus, the solver that will be used in the example.
+
+import approximation
+solver = approximation.Discus()
+
+5.2 Next, define the model parameters.
+
+
+U=2.81e-01; D=5.89e-02; k1=1.87e-01; k2=1.51e-02
+solver.stream.params([U,D,k1,k2])
+
+You can check and see if you forgot anything with:
+
+print solver.info()
+
+Or equivalently:
+
+print solver
+
+At this point, the command will show:
+Path:		../bin
+Execcutable:	DISCUS
+Model parameters:	U 2.810000e-01	D 5.890000e-02	k1 1.870000e-01	k2 1.510000e-02
+Domain information:	Not set.
+Upstream values:	 Not set.
+Observed:	Not set (optional).
+Status:	Simulation is not ready because lb.dat has not been written (use Approximation.upstream() to write it).
+
+This clearly indicates that the path and executable name are defined, as well as parameters. It also indicates that the solver cannot yet be run. The things marked as not set are upstream, observed, and domain information.
+
+5.3 Load the domain information along with upstream and observed values.
+
+solver.loadFile("../example/scotland.dat")
+
+You can check and see that everything is loaded with "print solver", as in 5.2.
+
+5.4 Run the solver.
+
+solver()
+
+Or:
+
+solver.run()
+
+5.5 Plot the approximation. To just see the values calculated:
+
+solver.showApprox()
+
+Or, to visually compare it with the observed:
+solver.showApprox(solver.observed())
+
+5.6 Get the error norm. Because we have supplied observed data, the solver can calculate the norm.
+
+(abs,rel) = solver.getNorm()
+print abs,rel
+
+5.7 Extended Example: This takes off where the above example leaves off, and demonstrates comparing the two solvers. First, the Otis class is instantiated. Next, the stream from the Discus run is copied using copyStream() - this inserts the upstream, domain, and parameters into the new solver. Then the observed data is copied with the observed() routine. Finally, the simulation is run and the simulations can be compared.
+
+solver2 = Otis()
+solver2.stream.copy(solver.stream)
+solver2.observed(solver.observed())
+solver2.run()
+solver2.showApprox(solver.approximated())
+
+
+6. References
+
+Manson J.R., B.O.L. Demars, and S.G. Wallis (2011) Integrated Experimental and Computational Hydraulic Science in a Unique Natural Laboratory. Experimental Methods in Hydraulic Research: 123-131
+
+Runkel, R.L. (1998) One-Dimensional Transport with Inflow and Storage (OTIS): A Solute Transport Model for Streams and Rivers: U.S. Geological Survey Water-Resources Investigations Report 98-4018.
+
