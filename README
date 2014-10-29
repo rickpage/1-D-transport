@@ -3,7 +3,7 @@ by Rick Page
 
 0. Important Note
 
-The publicly available GitHub repository does not contain implementations of the algorithms for solving the transport equation (see papers in section 6). See section 4 for running with your own solver (you may also wish to edit the accompanying makefile). If you wish to use this software with the original solvers, please contact rickpagersc@gmail.com. 
+To use the module as intended you will also need to compile C/C++ and FORTRAN, or use your own solver. Included implementations of the algorithms for solving the transport equation are intellectual property of their respective owners, used here for academic purposes only (see papers in section 6). See section 4 for running with your own solver (you may also wish to edit the accompanying makefile). If you need assistance using this software with the original solvers, please contact rickpagersc@gmail.com. 
 
 1. Overview
 Approximation is a module that assists modelers who wish to solve the one dimensional transport equation with transient storage regions. The partial differential equation takes the form:
