@@ -3,7 +3,7 @@ by Rick Page
 
 0. Important Note
 
-To use the module as intended you will also need to compile C/C++ and FORTRAN, or use your own solver. Included implementations of the algorithms for solving the transport equation are intellectual property of their respective owners, used here for academic purposes only (see papers in section 6). See section 4 for running with your own solver (you may also wish to edit the accompanying makefile). If you need assistance using this software with the original solvers, please contact rickpagersc@gmail.com. 
+The python module does not solve the PDE, but rather calls on existing solver programs. To use the module as originally developed you will also need to compile C/C++ and FORTRAN, or use your own solver. Included implementations of the algorithms for solving the transport equation are intellectual property of their respective owners, used here for academic purposes only (see papers in section 6). See section 4 for running with your own solver (you may also wish to edit the accompanying makefile). If you need assistance using this software with the original solvers, please contact rickpagersc@gmail.com. 
 
 1. Overview
 Approximation is a module that assists modelers who wish to solve the one dimensional transport equation with transient storage regions. The partial differential equation takes the form:
